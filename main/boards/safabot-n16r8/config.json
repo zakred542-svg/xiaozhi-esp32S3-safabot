@@ -1,0 +1,9 @@
+{
+  "type": "safabot-n16r8",
+  "target": "esp32s3",
+  "builds": [
+    {
+      "name": "safabot-n16r8"
+    }
+  ]
+}
