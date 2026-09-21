@@ -3,360 +3,259 @@
 
 #include <driver/gpio.h>
 
-#define AUDIO_INPUT_SAMPLE_RATE  16000
-#define AUDIO_OUTPUT_SAMPLE_RATE 24000
+// ============================================================
+// SafaBot PRO Master Edition
+// Board: ESP32-S3-N16R8
+// Flash: 16 MB
+// PSRAM: OPI
+// ============================================================
 
-// 如果使用 Duplex I2S 模式，请注释下面一行
+
+// ============================================================
+// AUDIO
+// ============================================================
+
+#define AUDIO_INPUT_SAMPLE_RATE   16000
+#define AUDIO_OUTPUT_SAMPLE_RATE  24000
+
+// Use separate I2S input/output
 #define AUDIO_I2S_METHOD_SIMPLEX
 
+
 #ifdef AUDIO_I2S_METHOD_SIMPLEX
-    // audio i2s pin
-    #define AUDIO_I2S_MIC_GPIO_WS   GPIO_NUM_40
-    #define AUDIO_I2S_MIC_GPIO_SCK  GPIO_NUM_42
-    #define AUDIO_I2S_MIC_GPIO_DIN  GPIO_NUM_41
-    #define AUDIO_I2S_SPK_GPIO_DOUT GPIO_NUM_21
-    #define AUDIO_I2S_SPK_GPIO_BCLK GPIO_NUM_47
-    #define AUDIO_I2S_SPK_GPIO_LRCK GPIO_NUM_48
+
+// ------------------------------------------------------------
+// INMP441 Microphone
+// ------------------------------------------------------------
+
+#define AUDIO_I2S_MIC_GPIO_WS     GPIO_NUM_40
+#define AUDIO_I2S_MIC_GPIO_SCK    GPIO_NUM_42
+#define AUDIO_I2S_MIC_GPIO_DIN    GPIO_NUM_41
+
+
+// ------------------------------------------------------------
+// MAX98357A Speaker Amplifier
+// ------------------------------------------------------------
+
+#define AUDIO_I2S_SPK_GPIO_DOUT   GPIO_NUM_21
+#define AUDIO_I2S_SPK_GPIO_BCLK   GPIO_NUM_47
+#define AUDIO_I2S_SPK_GPIO_LRCK   GPIO_NUM_48
+
 #else
 
-    #define AUDIO_I2S_GPIO_WS GPIO_NUM_4
-    #define AUDIO_I2S_GPIO_BCLK GPIO_NUM_5
-    #define AUDIO_I2S_GPIO_DIN  GPIO_NUM_6
-    #define AUDIO_I2S_GPIO_DOUT GPIO_NUM_7
+// ------------------------------------------------------------
+// Duplex I2S fallback
+// ------------------------------------------------------------
+
+#define AUDIO_I2S_GPIO_WS         GPIO_NUM_4
+#define AUDIO_I2S_GPIO_BCLK       GPIO_NUM_5
+#define AUDIO_I2S_GPIO_DIN        GPIO_NUM_6
+#define AUDIO_I2S_GPIO_DOUT       GPIO_NUM_7
 
 #endif
 
 
-#ifdef  CONFIG_BOARD_NO_MOTOR_CONTROL  // 没有电机控制功能的版本
-    #define BUILTIN_LED_GPIO        GPIO_NUM_14
-    #define BOOT_BUTTON_GPIO        GPIO_NUM_0
-    #define TOUCH_BUTTON_GPIO       GPIO_NUM_NC
-    #define VOLUME_UP_BUTTON_GPIO   GPIO_NUM_38
-    #define VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_39
+// ============================================================
+// BOOT / USER BUTTONS
+// ============================================================
 
-    // lcd pin
-    #define DISPLAY_BACKLIGHT_PIN GPIO_NUM_10
-    #define DISPLAY_MOSI_PIN      GPIO_NUM_8
-    #define DISPLAY_CLK_PIN       GPIO_NUM_9
-    #define DISPLAY_DC_PIN        GPIO_NUM_12
-    #define DISPLAY_RST_PIN       GPIO_NUM_13
-    #define DISPLAY_CS_PIN        GPIO_NUM_11
+// ESP32-S3 BOOT button
+#define BOOT_BUTTON_GPIO          GPIO_NUM_0
 
-#endif
+// No physical touch button currently assigned
+#define TOUCH_BUTTON_GPIO         GPIO_NUM_NC
 
-#ifdef  CONFIG_BOARD_HAVE_MOTOR_CONTROL  // 有电机控制功能的版本
-
-    #define BUILTIN_LED_GPIO        GPIO_NUM_NC
-    #define BOOT_BUTTON_GPIO        GPIO_NUM_0
-    #define TOUCH_BUTTON_GPIO       GPIO_NUM_NC
-    #define VOLUME_UP_BUTTON_GPIO   GPIO_NUM_NC
-    #define VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_NC
-
-    // lcd
-    #define DISPLAY_BACKLIGHT_PIN GPIO_NUM_19
-    #define DISPLAY_MOSI_PIN      GPIO_NUM_8
-    #define DISPLAY_CLK_PIN       GPIO_NUM_9
-    #define DISPLAY_DC_PIN        GPIO_NUM_38
-    #define DISPLAY_RST_PIN       GPIO_NUM_39
-    #define DISPLAY_CS_PIN        GPIO_NUM_20
-#endif
+// Volume buttons are not required.
+// Volume will be controlled by SafaBot software/web/voice.
+#define VOLUME_UP_BUTTON_GPIO     GPIO_NUM_NC
+#define VOLUME_DOWN_BUTTON_GPIO   GPIO_NUM_NC
 
 
-#if CONFIG_WK_ESP32S3_DEV_DISPLAY_OLED
-    // WK ESP32S3 DEV 使用 OLED
-    #define DISPLAY_SDA_PIN GPIO_NUM_8
-    #define DISPLAY_SCL_PIN GPIO_NUM_9
-    #define DISPLAY_WIDTH   128
+// ============================================================
+// STATUS LED
+// ============================================================
 
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y true
+// No dedicated onboard LED assigned yet.
+#define BUILTIN_LED_GPIO          GPIO_NUM_NC
 
-    #if CONFIG_OLED_SSD1306_128X32
-    #define DISPLAY_HEIGHT  32
-    #elif CONFIG_OLED_SSD1306_128X64
-    #define DISPLAY_HEIGHT  64
-    #elif CONFIG_OLED_SH1106_128X64
-    #define DISPLAY_HEIGHT  64
-    #define SH1106
-    #else
-    #error "OLED display type is not selected"
-    #endif
 
-#elif CONFIG_WK_ESP32S3_DEV_DISPLAY_LCD
-    // WK ESP32S3 DEV 使用 LCD
-    #ifdef CONFIG_LCD_ST7789_240X320
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// ============================================================
+// DISPLAY
+// SH1106 OLED 128x64 I2C
+// ============================================================
 
-    #ifdef CONFIG_LCD_ST7789_240X320_NO_IPS
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    false
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define DISPLAY_SDA_PIN           GPIO_NUM_8
+#define DISPLAY_SCL_PIN           GPIO_NUM_9
 
-    #ifdef CONFIG_LCD_ST7789_170X320
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   170
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  35
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define DISPLAY_WIDTH             128
+#define DISPLAY_HEIGHT            64
 
-    #ifdef CONFIG_LCD_ST7789_172X320
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   172
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  34
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// Initial orientation.
+// These can be changed after the real display is tested.
+#define DISPLAY_MIRROR_X          true
+#define DISPLAY_MIRROR_Y          true
 
-    #ifdef CONFIG_LCD_ST7789_240X280
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  280
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  20
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
 
-    #ifdef CONFIG_LCD_ST7789_240X240
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  240
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// Tell the display driver which OLED controller is used.
+#define SH1106
 
-    #ifdef CONFIG_LCD_ST7789_240X240_7PIN
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  240
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 3
-    #endif
 
-    #ifdef CONFIG_LCD_ST7789_240X135
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  135
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY true
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  40
-    #define DISPLAY_OFFSET_Y  53
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// ============================================================
+// SafaBot MOTORCYCLE CONTROL
+// ============================================================
+//
+// All relay outputs are intended for active-low relay modules.
+//
+// GPIO LOW  = relay active
+// GPIO HIGH = relay inactive
+//
+// IMPORTANT:
+// The ESP32 GPIO must NOT drive motorcycle loads directly.
+// Use suitable relay/driver circuitry.
+// ============================================================
 
-    #ifdef CONFIG_LCD_ST7735_128X160
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   128
-    #define DISPLAY_HEIGHT  160
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y true
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    false
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define SAFABOT_KONTAKT_GPIO       GPIO_NUM_10
+#define SAFABOT_STARTER_GPIO       GPIO_NUM_11
 
-    #ifdef CONFIG_LCD_ST7735_128X128
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   128
-    #define DISPLAY_HEIGHT  128
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y true
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR  false
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  32
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define SAFABOT_RIGHT_GPIO         GPIO_NUM_12
+#define SAFABOT_LEFT_GPIO          GPIO_NUM_13
 
-    #ifdef CONFIG_LCD_ST7796_320X480
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   320
-    #define DISPLAY_HEIGHT  480
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define SAFABOT_HIGH_BEAM_GPIO     GPIO_NUM_14
+#define SAFABOT_HORN_GPIO          GPIO_NUM_15
 
-    #ifdef CONFIG_LCD_ST7796_320X480_NO_IPS
-    #define LCD_TYPE_ST7789_SERIAL
-    #define DISPLAY_WIDTH   320
-    #define DISPLAY_HEIGHT  480
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    false
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
 
-    #ifdef CONFIG_LCD_ILI9341_240X320
-    #define LCD_TYPE_ILI9341_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// ------------------------------------------------------------
+// Relay 6
+// Engine Stop
+//
+// Intended motorcycle circuit:
+// Black/White wire <-> Green wire
+//
+// The actual motorcycle wiring will NOT be connected until
+// the circuit is electrically verified.
+// ------------------------------------------------------------
 
-    #ifdef CONFIG_LCD_ILI9341_240X320_NO_IPS
-    #define LCD_TYPE_ILI9341_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    false
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define SAFABOT_ENGINE_STOP_GPIO   GPIO_NUM_16
 
-    #ifdef CONFIG_LCD_GC9A01_240X240
-    #define LCD_TYPE_GC9A01_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  240
-    #define DISPLAY_MIRROR_X true
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
 
-    // 新增
-    #ifdef CONFIG_LCD_NV3030B_240X320
-    #define LCD_TYPE_NV3030B_SERIAL
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  -20
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+// ------------------------------------------------------------
+// Auxiliary relay
+// ------------------------------------------------------------
 
-    // 新增
-    #ifdef CONFIG_LCD_ILI9486_320X480
-    #define LCD_TYPE_ILI9486_SERIAL
-    #define DISPLAY_WIDTH   320
-    #define DISPLAY_HEIGHT  480
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  -20
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
+#define SAFABOT_AUX2_GPIO          GPIO_NUM_17
 
-    #ifdef CONFIG_LCD_CUSTOM
-    #define DISPLAY_WIDTH   240
-    #define DISPLAY_HEIGHT  320
-    #define DISPLAY_MIRROR_X false
-    #define DISPLAY_MIRROR_Y false
-    #define DISPLAY_SWAP_XY false
-    #define DISPLAY_INVERT_COLOR    true
-    #define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
-    #define DISPLAY_OFFSET_X  0
-    #define DISPLAY_OFFSET_Y  0
-    #define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
-    #define DISPLAY_SPI_MODE 0
-    #endif
-#endif
 
-// A MCP Test: Control a lamp
-#define LAMP_GPIO GPIO_NUM_15
+// Reserved output for future SafaBot function
+#define SAFABOT_AUX3_GPIO          GPIO_NUM_18
+
+
+// ============================================================
+// RELAY LOGIC
+// ============================================================
+
+// Active-low relay board
+#define SAFABOT_RELAY_ACTIVE_LEVEL    GPIO_LOW
+#define SAFABOT_RELAY_INACTIVE_LEVEL  GPIO_HIGH
+
+
+// ============================================================
+// SAFETY TIMERS
+// ============================================================
+
+// Maximum starter activation time.
+// Prevents the starter relay remaining active indefinitely.
+#define SAFABOT_STARTER_MAX_MS      2000
+
+
+// Horn maximum activation time.
+#define SAFABOT_HORN_MAX_MS         800
+
+
+// Indicator flashing interval.
+#define SAFABOT_FLASH_INTERVAL_MS   500
+
+
+// Engine-stop pulse/activation limit.
+// The motor-control layer will apply additional safety checks.
+#define SAFABOT_ENGINE_STOP_MAX_MS  1000
+
+
+// ============================================================
+// MOTOR CONTROL FEATURES
+// ============================================================
+
+#define SAFABOT_HAS_MOTOR_CONTROL  1
+
+#define SAFABOT_HAS_KONTAKT        1
+#define SAFABOT_HAS_STARTER        1
+#define SAFABOT_HAS_INDICATORS     1
+#define SAFABOT_HAS_HIGH_BEAM      1
+#define SAFABOT_HAS_HORN           1
+#define SAFABOT_HAS_ENGINE_STOP    1
+#define SAFABOT_HAS_AUX2           1
+
+
+// Emergency lights use both indicators.
+// No additional GPIO is required.
+//
+// RIGHT  + LEFT = HAZARD
+
+
+// ============================================================
+// SAFABOT SECURITY
+// ============================================================
+
+// Sensitive motorcycle commands must pass through the
+// SafaBot security/control layer.
+//
+// This flag does NOT directly activate anything.
+// It tells the motor-control subsystem that safety checks
+// are required.
+#define SAFABOT_SECURE_MOTOR_COMMANDS  1
+
+
+// Engine stop is treated as a protected command.
+#define SAFABOT_PROTECTED_ENGINE_STOP  1
+
+
+// Starter is always time-limited.
+#define SAFABOT_PROTECTED_STARTER      1
+
+
+// ============================================================
+// RESERVED GPIO DOCUMENTATION
+// ============================================================
+//
+// GPIO 0   -> BOOT
+// GPIO 1   -> reserved
+//
+// GPIO 8   -> OLED SDA
+// GPIO 9   -> OLED SCL
+//
+// GPIO 10  -> Kontakt
+// GPIO 11  -> Starter
+// GPIO 12  -> Right indicator
+// GPIO 13  -> Left indicator
+// GPIO 14  -> High beam
+// GPIO 15  -> Horn
+// GPIO 16  -> Engine Stop / Relay 6
+// GPIO 17  -> AUX2
+// GPIO 18  -> AUX3
+//
+// GPIO 21  -> MAX98357A DOUT
+//
+// GPIO 40  -> INMP441 WS
+// GPIO 41  -> INMP441 SD/DIN
+// GPIO 42  -> INMP441 SCK
+//
+// GPIO 47  -> MAX98357A BCLK
+// GPIO 48  -> MAX98357A LRCK
+//
+// ============================================================
+
+
+// ============================================================
+// END OF SAFABOT BOARD CONFIGURATION
+// ============================================================
 
 #endif // _BOARD_CONFIG_H_
